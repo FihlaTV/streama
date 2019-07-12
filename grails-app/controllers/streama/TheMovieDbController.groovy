@@ -9,28 +9,24 @@ class TheMovieDbController {
   def theMovieDbService
   def migrationService
 
-  def parseGenres(movieDbGenres){
-    def streamaGenres = []
-    movieDbGenres.each{ metaGenre ->
-      Genre genre = Genre.findByApiId(metaGenre)
-      streamaGenres.add(genre)
-    }
-    return streamaGenres
-  }
-
   def search() {
     String type = params.type
     String name = params.name
 
+    if(!name){
+      render 'name required'
+      return
+    }
+
     def query = URLEncoder.encode(name, "UTF-8")
 
-    def JsonContent = new URL(theMovieDbService.BASE_URL + '/search/' + type + '?query=' + query + '&api_key=' + theMovieDbService.API_KEY).text
+    def JsonContent = new URL(theMovieDbService.BASE_URL + '/search/' + type + '?query=' + query + '&' + theMovieDbService.API_PARAMS).getText("UTF-8")
     def json = new JsonSlurper().parseText(JsonContent)
 
     def results = json?.results
 
     results.each{ hit ->
-      hit.genre = parseGenres(hit.genre_ids)
+      hit.genre = theMovieDbService.parseGenres(hit.genre_ids)
     }
 
     respond json?.results
@@ -49,7 +45,7 @@ class TheMovieDbController {
       return
     }
 
-    def JsonContent = new URL(theMovieDbService.BASE_URL + '/tv/' + apiId + '?api_key=' + theMovieDbService.API_KEY).text
+    def JsonContent = new URL(theMovieDbService.BASE_URL + '/tv/' + apiId + '?' + theMovieDbService.API_PARAMS).getText("UTF-8")
     def json = new JsonSlurper().parseText(JsonContent)
 
     def seasons = json?.seasons
@@ -90,7 +86,7 @@ class TheMovieDbController {
       return result
     }
 
-    def JsonContent = new URL(theMovieDbService.BASE_URL + '/tv/' + apiId + '/season/' + season + '?api_key=' + theMovieDbService.API_KEY).text
+    def JsonContent = new URL(theMovieDbService.BASE_URL + '/tv/' + apiId + '/season/' + season + '?' + theMovieDbService.API_PARAMS).getText("UTF-8")
     def json = new JsonSlurper().parseText(JsonContent)
 
     def episodes = json?.episodes
@@ -99,6 +95,7 @@ class TheMovieDbController {
       if(Episode.findByShowAndSeason_numberAndEpisode_numberAndDeletedNotEqual(tvShow, season, episodeData.episode_number, true)){
         return
       }
+      episodeData.apiId = episodeData.id
       result.add(episodeData)
     }
 
@@ -120,6 +117,18 @@ class TheMovieDbController {
 
   def testMigration(){
     migrationService.addGenresToMoviesAndShows()
+  }
+
+  def imagesForMedia(){
+    String apiId = params.apiId
+    String type = params.type
+    String imageType = params.imageType ?: 'backdrops'
+
+    def requestUrl = "${theMovieDbService.BASE_URL}/${type}/${apiId}/images?${theMovieDbService.API_PARAMS_WITHOUT_LANG}"
+    def JsonContent = new URL(requestUrl).getText("UTF-8")
+    def json = new JsonSlurper().parseText(JsonContent)
+
+    render (json?."$imageType" as JSON)
   }
 
 }

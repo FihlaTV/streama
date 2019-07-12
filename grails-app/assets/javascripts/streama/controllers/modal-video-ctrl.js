@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('streama').controller('modalVideoCtrl', [
-	'$scope', '$uibModalInstance', 'apiService', 'video', 'isManual', 'tvShow',
-	function ($scope, $uibModalInstance, apiService, video, isManual, tvShow) {
+	'$scope', '$uibModalInstance', 'apiService', 'video', 'isManual', 'tvShow', 'uploadService',
+	function ($scope, $uibModalInstance, apiService, video, isManual, tvShow, uploadService) {
 	$scope.loading = false;
 	$scope.addManually = isManual;
 
@@ -15,21 +15,31 @@ angular.module('streama').controller('modalVideoCtrl', [
 		delete episode.dateCreated;
 		delete episode.lastUpdated;
 
-		apiService.episode.save(episode)
-			.success(function (data) {
+		apiService.episode.save(episode).then(function (data) {
 				$uibModalInstance.close(data);
         alertify.success("Video saved.");
-			})
-			.error(function () {
+			}, function () {
 				alertify.error("An error occured.");
 			});
 	};
 
-	$scope.deleteVideo = function(video){
+  $scope.imageUpload = {};
+  $scope.uploadImage = function (files, type) {
+    uploadService.doUpload($scope.imageUpload, 'file/upload.json', function (data) {
+      $scope.imageUpload.percentage = null;
+      if(data.error) return
+
+      $scope.episode[type] = data;
+      $scope.episode[type+'_src'] = data.src;
+    }, function () {}, files);
+  };
+
+
+    $scope.deleteVideo = function(video){
     alertify.set({ buttonReverse: true, labels: {ok: "Yes", cancel : "Cancel"}});
 		alertify.confirm("Are you sure you want to delete this Episode?", function (confirmed) {
 			if(confirmed){
-				apiService.video.delete(video.id).success(function () {
+				apiService.video.delete(video.id).then(function () {
 					$uibModalInstance.close({deleted: true});
 				});
 			}
@@ -42,8 +52,8 @@ angular.module('streama').controller('modalVideoCtrl', [
 		alertify.confirm("Are you sure you want to re-fetch the meta-data from TheMovieDb? " +
 				"All your changes except for the added files will be overridden.", function (confirmed) {
 			if(confirmed){
-				apiService.video.refetch(video.id).success(function (result) {
-					_.assign(video, result);
+				apiService.video.refetch(video.id).then(function (result) {
+					_.assign(video, result.data);
 					alertify.success('Fetch successful');
 				});
 			}

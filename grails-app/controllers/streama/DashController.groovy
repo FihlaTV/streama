@@ -4,40 +4,31 @@ import grails.converters.JSON
 import static org.springframework.http.HttpStatus.*
 
 class DashController {
+  static responseFormats = ['json', 'xml']
 
   def springSecurityService
+  def videoService
 
   def listContinueWatching(){
     User currentUser = springSecurityService.currentUser
+    Long profileId = request.getHeader('profileId')?.toLong()
+    Profile profile = Profile.findById(profileId)
 
-    def continueWatching = ViewingStatus.withCriteria {
-      eq("user", currentUser)
-      video{
-        isNotEmpty("files")
-        ne("deleted", true)
-      }
-//      eq("completed", false)
-      order("lastUpdated", "desc")
-    }
+    List<ViewingStatus> viewingStatusList = videoService.listContinueWatching(currentUser, profile)
 
-    JSON.use ('dashViewingStatus') {
-      respond continueWatching
+    return [viewingStatusList: viewingStatusList]
+  }
+
+
+  def listShows(){
+    JSON.use ('dashTvShow') {
+      respond videoService.listShows(params, [:])
     }
   }
 
-  def listShows(){
-    def tvShows = TvShow.withCriteria{
-      ne("deleted", true)
-      isNotEmpty("episodes")
-    }
 
-    tvShows = tvShows.findAll{ tvShow->
-      return tvShow.hasFiles
-    }
-
-    JSON.use ('dashTvShow') {
-      respond tvShows
-    }
+  def listEpisodesForShow(TvShow tvShow){
+    respond tvShow.getFilteredEpisodes()
   }
 
 
@@ -83,49 +74,168 @@ class DashController {
   }
 
   def listMovies(){
-    def movies = Movie.withCriteria {
-      ne("deleted", true)
-      isNotEmpty("files")
-    }
-
     JSON.use('dashMovies'){
-      respond movies
+      respond videoService.listMovies(params, [:])
     }
   }
 
 
   def listGenericVideos(){
-    def videos = GenericVideo.withCriteria {
-      ne("deleted", true)
-      isNotEmpty("files")
+    List<Long> genreIds = params.list('genreId')*.toLong() ?: []
+    Profile currentProfile = User.getProfileFromRequest()
+    if(currentProfile?.isChild){
+      genreIds += Genre.findAllByNameInList(['Kids', 'Family'])*.id
     }
 
+    def genericVideoQuery = GenericVideo.where {
+      deleted != true
+      isNotEmpty("files")
+      if(genreIds){
+        genre{
+          id in genreIds
+        }
+      }
+    }
+    def sort = params.sort
+    def order = params.order
+
+    def videos = genericVideoQuery.list(sort: sort, order: order)
+    def total = genericVideoQuery.count()
+
+    def result = [total: total, list: videos]
+
     JSON.use('dashGenericVideo'){
-      respond videos
+      render (result as JSON)
     }
   }
 
   def searchMedia() {
     String query = params.query
-    def movies = Movie.findAllByDeletedNotEqual(true)
-    def shows = TvShow.findAllByDeletedNotEqual(true)
 
+    def movies = Movie.where{
+      deleted != true
+      title =~ "%${query}%"
+    }.list()
+
+    def tvShows = TvShow.where{
+      deleted != true
+      name =~ "%${query}%"
+    }.list()
 
     def result = [
-        shows:shows.findAll{it.name.toLowerCase().contains(query.toLowerCase())},
-        movies:movies.findAll{it.title.toLowerCase().contains(query.toLowerCase())}
+        shows: tvShows,
+        movies: movies
     ]
     respond result
   }
 
 
   def listGenres(){
-    respond Genre.list()
+    def genres = Genre.list()
+    genres = genres.findAll{Genre currentGenre ->
+      def isUsedForMovie = Movie.where{genre{id == currentGenre.id}}.count() > 0
+      def isUsedForTvShow = TvShow.where{genre{id == currentGenre.id}}.count() > 0
+      def isUsedForGenericVideo = GenericVideo.where{genre{id == currentGenre.id}}.count() > 0
+      return (isUsedForMovie || isUsedForTvShow || isUsedForGenericVideo)
+    }
+    respond genres
   }
 
   def listNewReleases(){
-    JSON.use('dashMovies'){
-      respond NotificationQueue.findAllByType('newRelease').sort{new Random(System.nanoTime())}
+    List<Long> genreIds
+    Profile currentProfile = User.getProfileFromRequest()
+    if(currentProfile?.isChild){
+      genreIds = Genre.findAllByNameInList(['Kids', 'Family'])*.id
     }
+    List<NotificationQueue> newReleasesList = NotificationQueue.where{
+      type == 'newRelease'
+
+      if(genreIds){
+        or{
+          tvShow{
+            genre{
+              'in'('id', genreIds)
+            }
+          }
+          movie{
+            genre{
+              'in'('id', genreIds)
+            }
+          }
+        }
+      }
+    }.list()
+    newReleasesList = newReleasesList.sort { new Random(System.nanoTime()) }
+
+    JSON.use('dashMovies'){
+      respond newReleasesList
+    }
+  }
+
+
+  def mediaDetail(){
+    log.debug(params.mediaType)
+    log.debug(params.id)
+    Integer id = params.int('id')
+    def media
+
+    if(params.mediaType == 'movie'){
+      media = Movie.get(id)
+    }
+    if(params.mediaType == 'tvShow'){
+      media = TvShow.get(id)
+    }
+    if(params.mediaType == 'episode'){
+      media = Episode.get(id)
+    }
+    if(params.mediaType == 'genericVideo'){
+      media = GenericVideo.get(id)
+    }
+    if(!media){
+      render status: NOT_FOUND
+      return
+    }
+
+    JSON.use('mediaDetail'){
+      render (media as JSON)
+    }
+  }
+
+
+  def cotinueWatching(TvShow tvShow){
+    def result
+
+    if(!tvShow){
+      render status: NOT_FOUND
+      return
+    }
+
+    User currentUser = springSecurityService.currentUser
+    ViewingStatus viewingStatus = ViewingStatus.withCriteria {
+      eq("user", currentUser)
+      eq("tvShow", tvShow)
+      video {
+        isNotEmpty("files")
+        ne("deleted", true)
+      }
+//      eq("completed", false)
+      order("lastUpdated", "desc")
+    }?.getAt(0)
+
+    if(viewingStatus?.video){
+      result = viewingStatus?.video
+    }else{
+      result = tvShow.firstEpisode
+    }
+    JSON.use('mediaDetail'){
+      render (result as JSON)
+    }
+  }
+
+  def markAsCompleted(Video video){
+    ViewingStatus.where{
+      video == video
+    }.deleteAll()
+    render "OK"
   }
 }

@@ -9,7 +9,8 @@ angular.module('streama.translations').config(function ($translateProvider) {
 			USERNAME: 'Brugernavn',
 			PASSWORD: 'Kodeord',
 			FIRST_TIME_HINT: 'Første gang du logger ind? Prøv \'admin\' i begge felter.',
-			SUBMIT: 'Log Ind'
+			SUBMIT: 'Log Ind',
+      SESSION_EXPIRED: 'Din session er udløbet siden din sidste aktivitet. Venligst log ind igen.'
 		},
 		DASHBOARD: {
 			TITLE: 'Betjeningspanel',
@@ -48,21 +49,36 @@ angular.module('streama.translations').config(function ($translateProvider) {
 			FILE_IN_FS_NOT_FOUND: 'Din video kan ikke blive fundet i nogle af applikationens tilgænlige lokationer. Venligst tjek dine indstillger og dit fil system for at være sikker på at applikationen kan få adgang til filerne.'
 		},
 		MANAGE_CONTENT: 'Administrer Indhold',
+    MANAGE_SUB_PROFILES: 'Administrere profiler',
+    WHOS_WATCHING: 'Hvem ser det?',
+    ADD_SUB_PROFILE: 'Tilføj profil',
+    EDIT_BTN: 'Redigere',
+    DONE_BTN: 'Færdig',
+    SAVE_BTN: 'Gemme',
+    CREATE_BTN: 'skab',
+    CANCEL_BTN: 'Afbestille',
+    DELETE_BTN: 'Slet',
+    ENTER_NAME: 'Indtast navn',
+    EDIT_PROFILE: 'Rediger profil',
+    CREATE_PROFILE: 'Opret profil',
 		ADMIN: 'Admin',
 		HELP: 'Hjælp',
 		HELP_FAQ: 'Hjælp / FAQ',
 		PROFILE_SETTINGS: 'Profil Indstillinger',
 		LOGOUT: 'Log Ud',
 		CHANGE_PASSWORD: 'Skift Kodeord',
-		LANGUAGE_en: 'Engelsk',
-		LANGUAGE_de: 'Tysk',
-    	LANGUAGE_fr: 'Fransk',
-		LANGUAGE_es: 'Spansk',
-		LANGUAGE_kr: 'Koreansk',
-		LANGUAGE_nl: 'Hollandsk',
-		LANGUAGE_pt: 'Portugisisk',
+    LANGUAGE_en: 'English/Engelsk',
+    LANGUAGE_ru: 'Русский/Russisk',
+    LANGUAGE_de: 'Deutsch/Tysk',
+    LANGUAGE_fr: 'Français/Fransk',
+    LANGUAGE_es: 'Español/Spansk',
+    LANGUAGE_kr: '한국어/Koreansk',
+    LANGUAGE_nl: 'Nederlands/Hollandsk',
+    LANGUAGE_pt: 'Português/Portugisisk',
+    LANGUAGE_ja: '日本語/Japansk',
+    LANGUAGE_it: 'Italiano/Italiensk',
     LANGUAGE_da: 'Dansk',
-
+    LANGUAGE_ar: 'عربى/Arabisk',
 		PROFIlE: {
 			USERNAME: 'Brugernavn',
 			FULL_NAME: 'Fulde Navn',
@@ -77,7 +93,8 @@ angular.module('streama.translations').config(function ($translateProvider) {
 			REPEAT_PASS: 'Gentag Kodeord',
 			PASS_ERROR_EMPTY: 'Kodeordet kan ikke være tomt',
 			PASS_ERROR_LENGTH: 'Kodeordet skal være mindst 6 tegn langt',
-			PASS_ERROR_REPEAT: 'Kodeordene skal være ens.'
+			PASS_ERROR_REPEAT: 'Kodeordene skal være ens.',
+      AMOUNT_OF_MEDIA_ENTRIES: 'Antal videoer på Dashboard (Før "Load More")'
 		},
 
 		SORT_OPTIONS: {

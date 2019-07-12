@@ -14,6 +14,7 @@ class ViewingStatus {
   Integer currentPlayTime
   Integer runtime
   Boolean completed = false
+  Profile profile
 
   static mapping = {
     cache true
@@ -28,4 +29,5 @@ class ViewingStatus {
     currentPlayTime nullable: false
     video nullable: false
   }
+
 }

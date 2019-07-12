@@ -8,7 +8,8 @@ angular.module('streama').controller('modalUserCtrl', [
 		$scope.loading = false;
 		$scope.validPassword = isInvite ? true : false;
 
-		apiService.user.availableRoles().success(function (data) {
+		apiService.user.availableRoles().then(function (response) {
+      var data = response.data;
       $scope.roles = data;
     });
 
@@ -21,7 +22,8 @@ angular.module('streama').controller('modalUserCtrl', [
 			$scope.validUser = false;
 
 			if(username){
-				apiService.user.checkAvailability(username).success(function (data) {
+				apiService.user.checkAvailability(username).then(function (response) {
+          var data = response.data;
 					if(data.error){
 						$scope.error = 	data.error;
 					}else{
@@ -70,31 +72,61 @@ angular.module('streama').controller('modalUserCtrl', [
 
 		$scope.saveAndInviteUser = function (user) {
 			$scope.loading = true;
-
-			var dateObj = angular.copy(user);
-			apiService.user.saveAndInviteUser(dateObj)
-
-				.success(function (data) {
-					$uibModalInstance.close(data);
+      var dateObj = angular.copy(user);
+			apiService.user.saveAndInviteUser(dateObj).then(function (response) {
+			  var data = response.data;
+				  if(user.id){
+            alertify.success('User Updated!');
+            $uibModalInstance.close(data);
+            $scope.loading = false;
+            return;
+          }
+          var basicProfile = {
+            profileName: data.username,
+            profileLanguage: data.language,
+            isChild: false,
+            user: data
+          };
+          apiService.profile.save(basicProfile).then(function () {
+              alertify.success('Profile Created!');
+              $uibModalInstance.close(data);
+              $scope.loading = false;
+            }, function (data) {
+              alertify.error(data.message);
+              $scope.loading = false;
+            });
+				}, function (response) {
 					$scope.loading = false;
-				})
-				.error(function () {
-					$scope.loading = false;
-					alertify.error('There was an error saving the user.');
+					if(_.get(response, 'errors')){
+					  _.forEach(response.errors, function(error){
+              alertify.error('Error: ' + error.message);
+            });
+          }else{
+            alertify.error('There was an error saving the user.');
+          }
 				});
 		};
 
     $scope.saveAndCreateUser = function (user) {
       $scope.loading = true;
-
       var dateObj = angular.copy(user);
-      apiService.user.saveAndCreateUser(dateObj)
-
-        .success(function (data) {
-          $uibModalInstance.close(data);
-          $scope.loading = false;
-        })
-        .error(function () {
+      apiService.user.saveAndCreateUser(dateObj).then(function (response) {
+         var data = response.data;
+          var basicProfile = {
+            profileName: data.username,
+            profileLanguage: data.language,
+            isChild: false,
+            user: data
+          };
+          apiService.profile.save(basicProfile).then(function () {
+              alertify.success('Profile Created!');
+              $uibModalInstance.close(data);
+              $scope.loading = false;
+            }, function (data) {
+              alertify.error(data.message);
+              $scope.loading = false;
+            });
+        }, function () {
           $scope.loading = false;
           alertify.error('There was an error saving the user.');
         });

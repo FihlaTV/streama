@@ -3,7 +3,7 @@
   <div class="modal-body">
     <legend>
       Movie
-      <button class="btn btn-sm btn-white btn-outline pull-right" ng-show="hasKey" ng-click="toggleAddManually()">
+      <button class="btn btn-sm btn-white btn-outline pull-right" ng-show="hasMovieDBKey" ng-click="toggleAddManually()">
         <span ng-show="!addManually && !movie.id">Add Manually</span>
         <span ng-show="addManually">Add Automatically</span>
       </button>
@@ -24,7 +24,7 @@
       </div>
     </div>
 
-    <div ng-show="movie.release_date || movie.id || addManually">
+    <div ng-show="movie.apiId || addManually">
       <div class="form-group row-slim">
         <div class="col-sm-2">
           <label>Release Date</label>
@@ -47,6 +47,22 @@
             <label>Rating Count</label>
             <input type="text" class="form-control input-sm" ng-model="movie.vote_count" placeholder="Rating Count"/>
           </div>
+
+          <div class="col-sm-2">
+            <label>Outro Start</label>
+            <input type="text" class="form-control input-sm" ng-model="movie.outro_start" video-time-format
+                   placeholder="00:00:00 (time of outro start)"/>
+          </div>
+        </div>
+      </div>
+      <div class="form-group row-slim">
+        <div class="col-sm-3">
+          <label>YouTube Trailer Key</label>
+          <input type="text" class="form-control input-sm" ng-model="movie.trailerKey"/>
+        </div>
+        <div class="col-sm-3">
+          <label>Timestamp Added</label>
+          <input type="text" class="form-control input-sm" ng-model="movie.dateCreated"/>
         </div>
       </div>
 
@@ -61,11 +77,14 @@
         <div class="form-group">
           <div class="col-sm-12">
             <label>Genre</label>
-            <ul class="genre-list">
-              <li class="genre-tag" ng-repeat="genre in movie.genre">
-                {{genre.name}}
-              </li>
-            </ul>
+            <ui-select class="tag-select" multiple ng-model="movie.genre" theme="bootstrap" title="Add Genre">
+              <ui-select-match placeholder="Select Genre...">{{$item.name}}</ui-select-match>
+              <ui-select-choices repeat="genre in genres | propsFilter: {name: $select.search}">
+                <div class="tag-wrapper">
+                  <div class="tag-name" ng-bind-html="genre.name + genre.isTag| highlight: $select.search"></div>
+                </div>
+              </ui-select-choices>
+            </ui-select>
           </div>
         </div>
       </div>
@@ -96,6 +115,9 @@
           <label>Image</label>
           <br/>
           <img ng-src="https://image.tmdb.org/t/p/w300/{{movie.backdrop_path}}"/>
+          <br>
+          <br>
+          <button class="btn btn-default btn-sm" ng-click="chooseNewBackdrop()">Choose another image</button>
         </div>
       </div>
 
@@ -126,7 +148,7 @@
     </div>
   </div>
 
-  <div class="modal-footer" ng-if="movie.release_date || movie.id || addManually">
+  <div class="modal-footer" ng-if="movie.apiId || addManually">
     <button class="btn btn-success" ng-click="saveMovie(movie)" ng-disabled="!movie.title">Save</button>
     <button class="btn btn-default" ng-click="cancel()">Cancel</button>
   </div>

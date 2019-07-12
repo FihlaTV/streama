@@ -9,6 +9,7 @@ class DefaultDataService {
     def roles = [
       [authority: "ROLE_ADMIN", displayName: "Admin"],
       [authority: "ROLE_CONTENT_MANAGER", displayName: "Content Manager"],
+      [authority: "ROLE_TRUSTED_USER", displayName: "Trusted User"],
     ]
 
     roles.each { role ->
@@ -26,7 +27,7 @@ class DefaultDataService {
             password: 'admin',
             fullName: 'Administrator',
             enabled: true,
-            roles: [Role.findByAuthority("ROLE_ADMIN"), Role.findByAuthority("ROLE_CONTENT_MANAGER")]
+            roles: [Role.findByAuthority("ROLE_ADMIN"), Role.findByAuthority("ROLE_CONTENT_MANAGER"),Role.findByAuthority("ROLE_TRUSTED_USER")]
         ]
     ]
 
@@ -61,11 +62,21 @@ class DefaultDataService {
             required: true
         ],
         [
+          settingsKey: 'TheMovieDB API language',
+          description: "Language support on TMDb is based on the language query parameter you send along with your API key. " +
+            "For example, you could type es-ES for getting responses in spanish. Be careful with your country, es-ES is not the same as es-MX. " +
+            "More information at https://en.wikipedia.org/wiki/IETF_language_tag",
+          settingsType: 'string',
+          required: false,
+          value: 'en'
+        ],
+        [
             settingsKey: 'Base URL',
             value: 'http://localhost:8080',
-            description: 'The Base-URL is used for the videos and the link in the invitation-email.',
+            description: 'The Base-URL is used for the link in the invitation-email.',
             settingsType: 'string',
-            required: true
+            required: true,
+            validationRequired: false
         ],
         [
             settingsKey: 'Second Directory',
@@ -82,7 +93,15 @@ class DefaultDataService {
         [
             settingsKey: 'First Time Login Info',
             description: 'Should the First-Time login info (admin/admin) be shown in the login screen?',
-            settingsType: 'boolean'
+            settingsType: 'boolean',
+            value: 'true'
+        ],
+        [
+            settingsKey: 'Allow anonymous access',
+            name: 'anonymous_access',
+            description: 'Allow to reproduce videos without login in the application',
+            settingsType: 'boolean',
+            value: 'false'
         ],
         [
             settingsKey: 'Show Version Number',
@@ -108,12 +127,56 @@ class DefaultDataService {
             defaultValue: '/assets/favicon.ico'
         ],
         [
+          settingsKey: 'loginBG',
+          name: 'loginBackground',
+          description: 'Upload your custom login background',
+          settingsType: 'fileUpload',
+          value: '/assets/bg.jpg',
+          defaultValue: '/assets/bg.jpg'
+        ],
+        [
             settingsKey: 'Streama title',
             name: 'title',
             description: 'Change Name of Application',
             settingsType: 'string',
             value: 'Streama',
             required: true,
+            validationRequired: false
+        ],
+        [
+            settingsKey: 'User Activity Rotation',
+            name: 'user_activity_rotation',
+            description: 'Input a number here. Limits the amount of stored User Activity entries in the database to the amount supplied here. If none is given, all records will be stored without deletion. ',
+            settingsType: 'integer',
+            value: '',
+            required: false,
+            validationRequired: false
+        ],
+        [
+            settingsKey: 'Let users download Videos',
+            name: 'player_showDownloadButton',
+            description: 'When this value is set to true, the player-interface will get an additional download-button for all users. This will download the raw movie file. ',
+            settingsType: 'boolean',
+            value: 'false',
+            required: false,
+            validationRequired: false
+        ],
+        [
+            settingsKey: 'All Users can download (otherwise only Trusted)',
+            name: 'player_downloadForAllUsers',
+            description: 'If the download feature is enabled, by default only users with the role "Trusted User" can download videos. With this checkmark you can allow all users to download',
+            settingsType: 'boolean',
+            value: 'false',
+            required: false,
+            validationRequired: false
+        ],
+        [
+            settingsKey: 'Hidden Dash sections',
+            name: 'hidden_dash_sections',
+            description: 'You can here add a comma-separted list of all the dash sections you would like to hide. To find out the name, check for vm.isDashSectionHidden(\'SECTION-NAME\'). example value: "continue-watching,new-releases"',
+            settingsType: 'string',
+            value: '',
+            required: false,
             validationRequired: false
         ],
 //        [

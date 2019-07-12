@@ -1,5 +1,6 @@
 package streama
 
+import grails.converters.JSON
 import grails.transaction.Transactional
 
 import static java.util.UUID.randomUUID
@@ -10,9 +11,11 @@ import grails.transaction.Transactional
 class UserController {
 
   def validationService
+  def settingsService
   def mailService
   def springSecurityService
   def passwordEncoder
+  def userActivityService
 
   static responseFormats = ['json', 'xml']
   static allowedMethods = [save: "POST", delete: "DELETE"]
@@ -50,11 +53,17 @@ class UserController {
       return
     }
 
-    userInstance.deleted = true
-    userInstance.username = userInstance.username + (randomUUID() as String)
-    userInstance.accountExpired = true
+    /** the anonymous user is different, and disabled the anonymous_access property **/
+    if (userInstance.username == "anonymous") {
+      settingsService.disableAnonymousUser()
+      settingsService.changeAnonymousAccess("false")
+    } else {
+      userInstance.deleted = true
+      userInstance.username = userInstance.username + (randomUUID() as String)
+      userInstance.accountExpired = true
 
-    userInstance.save flush: true, failOnError: true
+      userInstance.save flush: true, failOnError: true
+    }
 
     render status: NO_CONTENT
   }
@@ -84,15 +93,15 @@ class UserController {
     }
 
     userInstance.properties = data
-
     userInstance.validate()
     if (userInstance.hasErrors()) {
-      render status: NOT_ACCEPTABLE
+      response.setStatus(NOT_ACCEPTABLE.value())
+      render (userInstance.errors as JSON)
       return
     }
 
 
-    if (!userInstance.invitationSent && userInstance.enabled && userInstance.username != "admin") {
+    if (!userInstance.invitationSent && userInstance.enabled && userInstance.username != "admin" && userInstance.username != "anonymous") {
       userInstance.uuid = randomUUID() as String
 
       try {
@@ -109,10 +118,17 @@ class UserController {
       userInstance.invitationSent = true
     }
 
+    if (userInstance.isDirty('username') && userInstance.getPersistentValue('username') == "anonymous") {
+      settingsService.changeAnonymousAccess("false")
+    }
 
+    if (userInstance.username == "anonymous") {
+      settingsService.changeAnonymousAccess(userInstance.enabled.toString())
+    }
     userInstance.save flush: true
-
-    UserRole.removeAll(userInstance)
+    UserRole.withNewSession {
+      UserRole.removeAll(userInstance)
+    }
 
     data.authorities?.each { roleJson ->
       Role role = Role.get(roleJson.id)
@@ -145,7 +161,6 @@ class UserController {
     userInstance.save flush: true
 
     UserRole.removeAll(userInstance)
-
     data.authorities?.each { roleJson ->
       Role role = Role.get(roleJson.id)
       UserRole.create(userInstance, role)
@@ -183,7 +198,7 @@ class UserController {
       Genre.findOrCreateByApiId(it.apiId)
     }
 
-    bindData(currentUser, userData, [exclude: ['username', 'password']])
+    bindData(currentUser, userData, [exclude: ['username', 'password', 'lastUpdated', 'dateCreated']])
 
     currentUser.save failOnError: true, flush: true
 
@@ -235,6 +250,7 @@ class UserController {
   }
 
   def loginTarget() {
+    userActivityService.createActivityEntry(request, 'login')
     redirect(uri: '/')
   }
 

@@ -10,7 +10,8 @@ angular.module('streama.translations').config(function ($translateProvider) {
 			USERNAME: 'Nome utente',
 			PASSWORD: 'Password',
 			FIRST_TIME_HINT: 'Prima volta log-in? Provare \'admin\' per entrambi i campi.',
-			SUBMIT: 'Account di accesso'
+			SUBMIT: 'Account di accesso',
+      SESSION_EXPIRED: 'La sessione è scaduta dall\'ultima attività. Per favore esegui l\'accesso di nuovo.'
 		},
 		DASHBOARD: {
 			TITLE: 'Cruscotto',
@@ -47,23 +48,36 @@ angular.module('streama.translations').config(function ($translateProvider) {
 			WRONG_BASEPATH: 'Hai dei video get incluso utilizzando il percorso di Base sbagliato, ma si sta visualizzando la pagina via "{{basePath}}". Assicurarsi che si imposta il percorso di Base corretto nelle impostazioni e che si sta utilizzando per esplorare applicazione.'
 		},
 		MANAGE_CONTENT: 'Gestire i contenuti',
+    MANAGE_SUB_PROFILES: 'Gestire i profili',
+    WHOS_WATCHING: 'Chi sta guardando',
+    ADD_SUB_PROFILE: 'Aggiungi profilo',
+    EDIT_BTN: 'Modificare',
+    DONE_BTN: 'Fatto',
+    SAVE_BTN: 'Salvare',
+    CREATE_BTN: 'Creare',
+    CANCEL_BTN: 'Annulla',
+    DELETE_BTN: 'Elimina',
+    ENTER_NAME: 'Inserisci il nome',
+    EDIT_PROFILE: 'Modifica Profilo',
+    CREATE_PROFILE: 'Crea un profilo',
 		ADMIN: 'Admin',
 		HELP: 'Guida',
 		HELP_FAQ: 'Guida / FAQ',
 		PROFILE_SETTINGS: 'Impostazioni del profilo',
 		LOGOUT: 'Logout',
 		CHANGE_PASSWORD: 'Cambia Password',
-		LANGUAGE_en: 'Inglese',
-		LANGUAGE_de: 'Tedesco',
-    	LANGUAGE_fr: 'Francese',
-		LANGUAGE_es: 'Spagnolo',
-		LANGUAGE_kr: 'Coreano',
-		LANGUAGE_nl: 'Olandese',
-		LANGUAGE_pt: 'Portoghese',
-		LANGUAGE_ja: 'Giapponese',
-		LANGUAGE_it: 'Italiano',
-
-
+    LANGUAGE_en: 'English/Inglese',
+    LANGUAGE_ru: 'Русский/Russo',
+    LANGUAGE_de: 'Deutsch/Tedesco',
+    LANGUAGE_fr: 'Français/Francese',
+    LANGUAGE_es: 'Español/Spagnolo',
+    LANGUAGE_kr: '한국어/Coreano',
+    LANGUAGE_nl: 'Nederlands/Olandese',
+    LANGUAGE_pt: 'Português/Portoghese',
+    LANGUAGE_ja: '日本語/Giapponese',
+    LANGUAGE_it: 'Italiano',
+    LANGUAGE_da: 'Dansk/danese',
+    LANGUAGE_ar: 'عربى/Arabo',
 		PROFIlE: {
 			USERNAME: 'Nome Utente',
 			FULL_NAME: 'Nome e cognome',
@@ -78,7 +92,8 @@ angular.module('streama.translations').config(function ($translateProvider) {
 			REPEAT_PASS: 'Ripeti la password',
 			PASS_ERROR_EMPTY: 'La password non può essere vuoto',
 			PASS_ERROR_LENGTH: 'La password deve essere lunga almeno 6 caratteri',
-			PASS_ERROR_REPEAT: 'Le password devono corrispondere'
+			PASS_ERROR_REPEAT: 'Le password devono corrispondere',
+      AMOUNT_OF_MEDIA_ENTRIES: 'Quantità di video su Dashboard (prima di "Load More")'
 		},
 
 		SORT_OPTIONS: {

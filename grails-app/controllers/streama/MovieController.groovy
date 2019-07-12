@@ -7,16 +7,20 @@ import grails.transaction.Transactional
 
 @Transactional(readOnly = true)
 class MovieController {
+  def videoService
 
   static responseFormats = ['json', 'xml']
   static allowedMethods = [save: "POST", update: "PUT", delete: "DELETE"]
 
   def index() {
-    respond Movie.findAllByDeletedNotEqual(true), [status: OK]
+    return videoService.listMovies(params, [includeEmpty: true])
   }
 
   @Transactional
-  def save(Movie movieInstance) {
+  def save() {
+    def data = request.JSON
+    Movie movieInstance = data.id ? Movie.get(data.id) : new Movie()
+
     if (movieInstance == null) {
       render status: NOT_FOUND
       return
@@ -25,6 +29,21 @@ class MovieController {
     if (!movieInstance.imdb_id && movieInstance.apiId) {
       movieInstance.imdb_id = movieInstance.fullMovieMeta?.imdb_id
     }
+
+    List tags = []
+    data.tags?.each{ tagData ->
+      Tag tag = Tag.findByIdOrName(tagData.id, tagData.name)
+      if(!tag){
+        tag = new Tag(tagData)
+        tag.save(flush: true, failOnError: true)
+      }
+
+      tags.add(tag)
+    }
+
+    data.tags = tags*.id
+    movieInstance.properties = data
+    movieInstance.properties.dateCreated = data
 
     movieInstance.validate()
     if (movieInstance.hasErrors()) {
@@ -37,6 +56,10 @@ class MovieController {
   }
 
   def show(Movie movie) {
+    if(!movie){
+      render status: NOT_FOUND
+      return
+    }
     respond movie, [status: OK]
   }
 

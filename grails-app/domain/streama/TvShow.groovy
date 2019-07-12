@@ -1,6 +1,8 @@
 package streama
 
-class TvShow {
+import streama.traits.SimpleInstance
+
+class TvShow implements SimpleInstance {
 
   transient theMovieDbService
 
@@ -42,10 +44,14 @@ class TvShow {
       overview size: 1..5000
   }
 
-  def getFilteredEpisodes(){
-    def filteredEpisodes = episodes.findAll{!it.deleted}
+  List<Episode> getFilteredEpisodes(){
+    List filteredEpisodes = Episode.findAllByShowAndDeletedNotEqual(this, true)
     return filteredEpisodes
   }
+
+//  def getEpisodes(){
+//    return this.getFilteredEpisodes()
+//  }
 
   def getExternalLinks(){
     theMovieDbService.getExternalLinks(this.apiId)
@@ -56,24 +62,17 @@ class TvShow {
   }
 
   def getFullTvShowMeta(){
-    return theMovieDbService.getFullTvShowMeta(this.apiId)
+    try{
+      return theMovieDbService.getFullTvShowMeta(this.apiId)
+    }catch (e){
+      log.warn("couldnt get FullTvShowMeta for ${this.apiId}")
+      log.warn(e.message)
+      return null
+    }
   }
 
 
   def getFirstEpisode(){
-    Episode firstEpisode = this.episodes?.find{it.files && it.season_number != "0"}
-
-    this.episodes.each{ Episode episode ->
-      if((episode.season_number == firstEpisode?.season_number) && (episode.episode_number < firstEpisode?.episode_number) && episode.files){
-        firstEpisode = episode
-      }
-      else if(episode.season_number < firstEpisode?.season_number && episode.files && episode.season_number != "0"){
-        firstEpisode = episode
-      }
-    }
-
-    if(firstEpisode && firstEpisode.files){
-      return firstEpisode
-    }
+    return this.episodes?.findAll{it.files && it.season_number != "0"}.min{it.seasonEpisodeMerged}
   }
 }

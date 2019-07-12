@@ -100,7 +100,7 @@
       bottom: -2px;
       z-index: 9;
       background-color: rgb(67, 158, 193);
-      border: 2px dashed #b0ddef;
+      border: 2px dashed $primary;
       text-align: center;
       font-weight: 500;
       line-height: 56px;
@@ -116,4 +116,21 @@
 }
 .color-danger{
   color: $danger;
+}
+
+
+.header-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border-color: transparent;
+  p {
+    margin: 0 4px;
+  }
+
+  &:hover, &:focus {
+    background-color: rgba(255,255,255, 0.12);
+    border-color: transparent;
+  }
 }

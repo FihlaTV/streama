@@ -8,8 +8,8 @@ angular.module('streama').controller('modalGenericVideoCtrl', [
 	$scope.video = video || {};
 
 	$scope.saveVideo = function (video) {
-		apiService.genericVideo.save(video).success(function (data) {
-			$uibModalInstance.close(data);
+		apiService.genericVideo.save(video).then(function (response) {
+			$uibModalInstance.close(response.data);
 		});
 	};
 
@@ -19,16 +19,19 @@ angular.module('streama').controller('modalGenericVideoCtrl', [
 	$scope.uploadImage = function (files, type) {
 		uploadService.doUpload($scope.imageUpload, 'file/upload.json', function (data) {
 			$scope.imageUpload.percentage = null;
+			
+			if(data.error) return
+			
 			console.log('%c type', 'color: deeppink; font-weight: bold; text-shadow: 0 0 5px deeppink;', type);
 			$scope.video[type] = data;
 			$scope.video[type+'_src'] = data.src;
-		}, files);
+		}, function () {}, files);
 	};
 
 
 
-	apiService.genres.list().success(function (data) {
-		$scope.genres = data;
+	apiService.genres.list().then(function (data) {
+		$scope.genres = data.data;
 	});
 
 
@@ -36,7 +39,7 @@ angular.module('streama').controller('modalGenericVideoCtrl', [
     alertify.set({ buttonReverse: true, labels: {ok: "Yes", cancel : "Cancel"}});
 		alertify.confirm("Are you sure, you want to delete this Episode?", function (confirmed) {
 			if(confirmed){
-				apiService.movie.delete(movie.id).success(function () {
+				apiService.movie.delete(movie.id).then(function () {
 					$uibModalInstance.close({deleted: true});
 				});
 			}
@@ -60,15 +63,15 @@ angular.module('streama').controller('modalGenericVideoCtrl', [
     alertify.set({ buttonReverse: true, labels: {ok: "Yes", cancel : "Cancel"}});
 		alertify.confirm('Are you sure you want to delete the tag ' + tag.name, function (confirmed) {
 			if(confirmed){
-				apiService.tag.delete(tag.id).success(function () {
+				apiService.tag.delete(tag.id).then(function () {
 					_.remove($scope.tags, {id: tag.id});
 				})
 			}
 		});
 	};
 
-	apiService.tag.list().success(function (data) {
-		$scope.tags = data;
+	apiService.tag.list().then(function (response) {
+		$scope.tags = response.data;
 	});
 
 

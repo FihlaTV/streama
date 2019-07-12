@@ -96,7 +96,7 @@
     width: 1.8em;
     line-height: 1.8em;
     text-align: center;
-    color: #b0ddef;
+    color: $primary;
     font-size: 33px;
     margin: -.9em;
     border-radius: 100%;
@@ -192,13 +192,15 @@
     text-overflow: ellipsis;
   }
   .media-progress{
-    margin-top: 5px;
-    height: 3px;
-    background-color: #333;
+    margin-top: 3px;
+    height: 7px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 5px;
+    overflow: hidden;
   }
 
   .progress-inner{
-    height: 3px;
+    height: 7px;
     background-color: $primary;
   }
 }

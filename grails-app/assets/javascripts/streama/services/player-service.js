@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('streama').factory('playerService',
-  function ($stateParams, $sce, $state, $rootScope, socketService, apiService, $interval, $filter, contextPath) {
+  function ($stateParams, $sce, $state, $rootScope, socketService, apiService, $interval, $filter, contextPath, $uibModal) {
 
     var videoData = null;
     var videoOptions;
@@ -14,13 +14,20 @@ angular.module('streama').factory('playerService',
       videoSrc: '',
       videoType: '',
       videoTrack: '',
+      subtitleSize: 'md',
       videoOverlayEnabled: true,
       showEpisodeBrowser: false,
       showNextButton: false,
       showSocketSession: true,
+      showDownloadButton: false,
+      isAutoplayNextActive: false,
       episodeList: [],
       selectedEpisodes: [],
       currentEpisode: {},
+      nextVideo: {},
+      outro_start: null,
+      subtitles: [],
+      videoFiles: [],
       onSocketSessionCreate: angular.noop,
       onTimeChange: angular.noop,
       onError: angular.noop,
@@ -28,7 +35,8 @@ angular.module('streama').factory('playerService',
       onPause: angular.noop,
       onClose: angular.noop,
       onNext: angular.noop,
-      onVideoClick: angular.noop
+      onVideoClick: angular.noop,
+      onEditVideo: angular.noop
     };
 
     return {
@@ -36,11 +44,18 @@ angular.module('streama').factory('playerService',
       {
         return videoOptions;
       },
-      setVideoOptions: function (video) {
+      setVideoOptions: function (video, settings) {
         videoOptions = angular.copy(defaultVideoOptions);
         videoData = video;
-        videoOptions.videoSrc = $sce.trustAsResourceUrl(video.files[0].src || video.files[0].externalLink);
-        videoOptions.videoType = video.files[0].contentType;
+        videoOptions.videoSrc = $sce.trustAsResourceUrl(video.defaultVideoFile.src || video.defaultVideoFile.externalLink);
+        videoOptions.originalFilename = video.defaultVideoFile.originalFilename;
+        videoOptions.videoType = video.defaultVideoFile.contentType;
+        videoOptions.selectedVideoFile = video.defaultVideoFile;
+        videoOptions.showDownloadButton = $rootScope.isDownloadButtonVisible;
+
+        if(video.videoFiles && video.videoFiles.length){
+          videoOptions.videoFiles = video.videoFiles;
+        }
 
         if(video.subtitles && video.subtitles.length){
           videoOptions.subtitles = video.subtitles;
@@ -51,23 +66,26 @@ angular.module('streama').factory('playerService',
         videoOptions.videoMetaSubtitle = (video.show ? video.episodeString + ' - ' + video.name : (video.release_date ? video.release_date.substring(0, 4) : ''));
         videoOptions.videoMetaDescription = video.overview;
 
-        if(videoData.nextEpisode){
-          console.log('%c showNextButton', 'color: deeppink; font-weight: bold; text-shadow: 0 0 5px deeppink;');
+        videoOptions.nextVideo = videoData.nextEpisode || videoData.nextVideo;
+        videoOptions.isAutoplayNextActive = !!videoData.nextEpisode;
+        videoOptions.outro_start = videoData.outro_start;
+
+        if(videoOptions.nextVideo){
           videoOptions.showNextButton = true;
         }
 
         if(videoData.show){
           videoOptions.showEpisodeBrowser = true;
 
-          apiService.tvShow.episodesForTvShow(videoData.show.id).success(function (episodes) {
+          apiService.tvShow.episodesForTvShow(videoData.show.id).then(function (response) {
+            var episodes = response.data;
             videoOptions.episodeList = _.groupBy(episodes, 'season_number');
             videoOptions.selectedEpisodes = videoOptions.episodeList[videoData.season_number];
             videoOptions.currentEpisode = {
               episode: videoData.episode_number,
               season: videoData.season_number,
               intro_start: videoData.intro_start,
-              intro_end: videoData.intro_end,
-              outro_start: videoData.outro_start
+              intro_end: videoData.intro_end
             };
           });
         }
@@ -89,6 +107,7 @@ angular.module('streama').factory('playerService',
         videoOptions.onNext = this.onNext.bind(videoOptions);
         videoOptions.onVideoClick = this.onVideoClick.bind(videoOptions);
         videoOptions.onSocketSessionCreate = this.onSocketSessionCreate.bind(videoOptions);
+        videoOptions.onEditVideo = this.onEditVideo.bind(videoData, videoOptions);
 
         return videoOptions;
       },
@@ -138,26 +157,56 @@ angular.module('streama').factory('playerService',
         $state.go('dash', {});
       },
 
+
       onVideoError: function (errorCode) {
-        var that = this;
-				errorCode = errorCode || 'CODEC_PROBLEM';
-        console.log('%c onVideoError', 'color: deeppink; font-weight: bold; text-shadow: 0 0 5px deeppink;');
-
-        if($state.current.name == 'player'){
-          alertify.alert($filter('translate')('MESSAGES.' + errorCode), function () {
-            if($rootScope.currentUser.authorities.length){
-              if(videoData.show){
-                $state.go('admin.show', {showId: videoData.show.id});
-              }else{
-                $state.go('admin.movie', {movieId: videoData.id});
-              }
-            }else{
-              $state.go('dash', {});
-            }
-
-          });
+        if ($state.current.name !== 'player') {
+          return;
         }
-      },
+        console.log('onVideoError');
+        errorCode = errorCode || 'CODEC_PROBLEM';
+        var modalInstance = $uibModal.open({
+        templateUrl: '/streama/modal--error-report.htm',
+        controller: 'modalErrorReportCtrl',
+        controllerAs: 'vm',
+        size: 'lg',
+        backdrop: 'static',
+        resolve: {
+          errorCode: function () {
+            return errorCode;
+          },
+          videoData: function () {
+            return videoData;
+          }
+        }
+
+      });
+
+      modalInstance.result.then(function (data) {
+        // (callback || angular.noop)(data);
+      });
+    },
+
+      // onVideoError: function (errorCode) {
+      //   var that = this;
+		//   		errorCode = errorCode || 'CODEC_PROBLEM';
+      //   console.log('%c onVideoError', 'color: deeppink; font-weight: bold; text-shadow: 0 0 5px deeppink;');
+      //
+      //
+      //   if($state.current.name == 'player'){
+      //     alertify.alert($filter('translate')('MESSAGES.' + errorCode), function () {
+      //       if($rootScope.currentUser.authorities.length){
+      //         if(videoData.show){
+      //           $state.go('admin.show', {showId: videoData.show.id});
+      //         }else{
+      //           $state.go('admin.movie', {movieId: videoData.id});
+      //         }
+      //       }else{
+      //         $state.go('dash', {});
+      //       }
+      //
+      //     });
+      //   }
+      // },
 
       onVideoTimeChange: function (slider, duration) {
         var params = {videoId: videoData.id, currentTime: slider.value, runtime: duration};
@@ -177,6 +226,14 @@ angular.module('streama').factory('playerService',
             $state.go($state.current, $stateParams, {reload: true});
           }
         });
+      },
+
+      onEditVideo: function () {
+        if(videoData.show){
+          $state.go('admin.show', {showId: videoData.show.id, episodeId: videoData.id, season: videoData.season_number});
+        }else{
+          $state.go('admin.movie', {movieId: videoData.id});
+        }
       },
 
       handleMissingFileError: function (video) {
@@ -253,7 +310,11 @@ angular.module('streama').factory('playerService',
 
 
       onNext: function () {
-        $state.go('player', {videoId: videoData.nextEpisode.id});
+        if(typeof videoData.nextEpisode !== 'undefined'){
+          $state.go('player', {videoId: videoData.nextEpisode.id});
+        }else if(typeof  videoData.nextVideo !== 'undefined'){
+          $state.go('player', {videoId: videoData.nextVideo.id});
+        }
       },
 
 

@@ -9,7 +9,7 @@ angular.module('streama').config(function ($stateProvider) {
 		.state('dash', {
 			url: '/dash?genreId?mediaModal?mediaType',
 			templateUrl: '/streama/dash.htm',
-			controller: 'dashCtrl',
+			controller: 'dashCtrl as vm',
 			reloadOnSearch: false,
 			resolve: {
 				currentUser: resolveCurrentUser
@@ -24,11 +24,16 @@ angular.module('streama').config(function ($stateProvider) {
 				currentUser: resolveCurrentUser
 			}
 		})
+		.state('sub-profiles', {
+			url: '/sub-profiles',
+			templateUrl: '/streama/sub-profiles.htm',
+			controller: 'subProfilesCtrl'
+		})
 
-		.state('profile', {
-			url: '/profile',
-			templateUrl: '/streama/profile.htm',
-			controller: 'profileCtrl',
+		.state('userSettings', {
+			url: '/user-settings',
+			templateUrl: '/streama/user-settings.htm',
+			controller: 'userSettingsCtrl',
 			resolve: {
 				currentUser: resolveCurrentUser
 			}
@@ -58,7 +63,7 @@ angular.module('streama').config(function ($stateProvider) {
 		.state('admin.movies', {
 			url: '/movies',
 			templateUrl: '/streama/admin-movies.htm',
-			controller: 'adminMoviesCtrl'
+			controller: 'adminMoviesCtrl as vm'
 		})
 		.state('admin.movie', {
 			url: '/movie/:movieId',
@@ -96,10 +101,16 @@ angular.module('streama').config(function ($stateProvider) {
 			controller: 'adminShowsCtrl'
 		})
 		.state('admin.show', {
-			url: '/show/:showId',
+			url: '/show/:showId?episodeId?season',
 			templateUrl: '/streama/admin-show.htm',
 			controller: 'adminShowCtrl'
 		})
+    .state('admin.reports', {
+      url: '/reports',
+      templateUrl: '/streama/admin-reports.htm',
+      controller: 'adminReportsCtrl',
+      controllerAs: "vm"
+    })
 
 
 
@@ -108,6 +119,15 @@ angular.module('streama').config(function ($stateProvider) {
 			url: '/users',
 			templateUrl: '/streama/settings-users.htm',
 			controller: 'settingsUsersCtrl',
+			resolve: {
+				currentUser: checkPermissionAdmin
+			}
+		})
+		.state('settings.userActivity', {
+			url: '/user-activity',
+			templateUrl: '/streama/settings-user-activity.htm',
+			controller: 'settingsUserActivityCtrl',
+      controllerAs: 'vm',
 			resolve: {
 				currentUser: checkPermissionAdmin
 			}
@@ -132,7 +152,8 @@ angular.module('streama').config(function ($stateProvider) {
 
 
 	function resolveCurrentUser(apiService, $rootScope) {
-		return apiService.currentUser().success(function (data) {
+		return apiService.currentUser().then(function (response) {
+			var data = response.data;
 			if(!data){
 				location.href = '/login/auth'
 			}
@@ -141,11 +162,16 @@ angular.module('streama').config(function ($stateProvider) {
 				$rootScope.currentUser = data;
 				return data;
 			}
-		});
+		}, function (err, status) {
+      if(status === 401){
+        location.href = '/login/auth?sessionExpired=true'
+      }
+    });
 	}
 
 	function checkPermissionAdmin(apiService, $rootScope, $state) {
-		return apiService.currentUser().success(function (data) {
+		return apiService.currentUser().then(function (response) {
+			var data = response.data;
 			if(!data){
 				location.href = '/login/auth'
 			}
@@ -159,7 +185,8 @@ angular.module('streama').config(function ($stateProvider) {
 	}
 
 	function checkPermission(apiService, $rootScope, $state) {
-		return apiService.currentUser().success(function (data) {
+		return apiService.currentUser().then(function (response) {
+			var data = response.data;
 			if(!data){
 				location.href = '/login/auth'
 			}
